@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6f43">
+<title>Generator Dokumen · Usaha Mandiri Lift</title>
+<style>
+  :root{
+    --bg:#f4f6f3; --card:#ffffff; --ink:#1b2a21; --muted:#5c6b62; --line:#d9e0da;
+    --brand:#1f6f43; --brand-ink:#ffffff; --accent:#e8830c; --soft:#e6f1ea; --danger:#b3261e;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#111713; --card:#19211c; --ink:#e7efe9; --muted:#9bab9f; --line:#2c3a31;
+           --brand:#43b97a; --brand-ink:#08150d; --accent:#f0a04b; --soft:#1f3126; --danger:#f2b8b5; }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+  header{padding:18px 16px 10px;max-width:760px;margin:0 auto}
+  header h1{margin:0;font-size:1.25rem;letter-spacing:.2px}
+  header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+  .tabs{display:flex;gap:8px;overflow-x:auto;padding:6px 16px 10px;max-width:760px;margin:0 auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:.9rem;white-space:nowrap}
+  .tab.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand);font-weight:600}
+  .tab[disabled]{opacity:.55}
+  main{max-width:760px;margin:0 auto;padding:0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:0 0 14px}
+  .card h2{margin:0 0 12px;font-size:1rem;display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:560px){ .grid.two{grid-template-columns:1fr 1fr} }
+  label{display:block;font-size:.8rem;color:var(--muted);margin:0 0 4px;font-weight:600}
+  input,select,textarea{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-height:44px}
+  input:focus,select:focus{outline:2px solid var(--brand);outline-offset:1px}
+  .hint{font-size:.78rem;color:var(--muted);margin-top:4px}
+  .badge{font-size:.78rem;background:var(--soft);color:var(--brand);padding:3px 10px;border-radius:999px;font-weight:700}
+  .item{border:1px dashed var(--line);border-radius:12px;padding:12px;margin:0 0 10px;background:var(--bg)}
+  .item .row{display:grid;grid-template-columns:.8fr .8fr 1.5fr;gap:8px;margin-top:8px}
+  .item .row .full{grid-column:1/-1}
+  .item .tot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:.9rem;color:var(--muted)}
+  .item .tot b{color:var(--ink)}
+  .sum{background:var(--soft);border-radius:12px;padding:12px 14px;margin-top:6px}
+  .sum div{display:flex;justify-content:space-between;padding:2px 0}
+  .sum .big{font-weight:800;font-size:1.08rem;border-top:1px solid var(--line);margin-top:4px;padding-top:6px}
+  .sum .tb{display:block;font-style:italic;color:var(--muted);font-size:.85rem;padding-top:6px}
+  button{font:inherit;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;min-height:44px;cursor:pointer}
+  button.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand);font-weight:700}
+  button.ghost{background:transparent}
+  button.danger{color:var(--danger)}
+  button.small{min-height:36px;padding:6px 10px;font-size:.85rem}
+  button[disabled]{opacity:.5}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .actions .grow{flex:1}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+       padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:5}
+  .bar .in{max-width:760px;margin:0 auto;display:flex;gap:8px}
+  .bar button{flex:1}
+  #toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#222;color:#fff;
+         padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9;max-width:90vw;text-align:center}
+  #toast.on{opacity:1}
+  #toast.err{background:var(--danger);color:#fff}
+  .foot{color:var(--muted);font-size:.78rem;text-align:center;padding:6px 16px 20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Generator Dokumen</h1>
+  <p>CV. Usaha Mandiri Lift — isi form, unduh Word</p>
+</header>
+
+<nav class="tabs" aria-label="Jenis dokumen">
+  <button class="tab on">Invoice</button>
+  <button class="tab" disabled>Kwitansi</button>
+  <button class="tab" disabled>Surat Permohonan Pembayaran</button>
+  <button class="tab" disabled>Surat TKDN</button>
+  <button class="tab" disabled>BA Pemeriksaan</button>
+  <button class="tab" disabled>Service Report</button>
+</nav>
+
+<main id="app"></main>
+
+<div class="bar"><div class="in">
+  <button id="btnAll" class="primary">Unduh semua</button>
+</div></div>
+<div id="toast" role="status"></div>
+<p class="foot">Data hanya tersimpan di browser perangkat ini. Tidak ada yang dikirim ke server.</p>
+
+<script src="jszip.min.js"></script>
+<script src="templates.js"></script>
+<script src="docgen.js"></script>
+<script>
+(function(){
+  'use strict';
+  var G = window.DocGen;
+  var KEY = 'umlift.invoice.v1', KEY_ITEMS = 'umlift.items.v1';
+
+  /* ---------- state ---------- */
+  function today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+  function newItem(){ return {nama:'', satuan:'Pcs', qty:'1', harga:''}; }
+  function newInvoice(){ return {noManual:'', noPO:'', tglPO:'', jatuhTempo:'', jtManual:false, items:[newItem()], potongan:''}; }
+  function defaults(){ return {
+    tanggal: today(),
+    kepada: 'DEPUTI BIDANG STRUKTUR RISET DAN INOVASI BRIN',
+    alamat1: 'Gd. B.J Habibie Lt.14. Jl. Kp. Bali XXXIV No. 15 8, RT 10/RW 10 Kp Bali',
+    alamat2: 'Kecamatan Tanah Abang, Kota Jakarta Pusat',
+    keterangan: 'Service berkala', ppn: '11',
+    invoices: [newInvoice()]
+  };}
+  function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+  var state = lsGet(KEY) || defaults();
+  if(!state.invoices || !state.invoices.length) state.invoices=[newInvoice()];
+  var history = lsGet(KEY_ITEMS) || {};
+  function persist(){ lsSet(KEY, state); }
+
+  /* ---------- helpers ---------- */
+  function h(tag, attrs){
+    var el=document.createElement(tag);
+    if(attrs) for(var k in attrs){
+      if(k==='class') el.className=attrs[k];
+      else if(k==='text') el.textContent=attrs[k];
+      else if(k.slice(0,2)==='on') el.addEventListener(k.slice(2), attrs[k]);
+      else if(attrs[k]!==false && attrs[k]!==null) el.setAttribute(k, attrs[k]===true?'':attrs[k]);
+    }
+    for(var i=2;i<arguments.length;i++){ var c=arguments[i]; if(c==null) continue; el.appendChild(typeof c==='string'?document.createTextNode(c):c); }
+    return el;
+  }
+  function field(label, input, hint){
+    return h('div',null, h('label',null,label), input, hint?h('div',{class:'hint',text:hint}):null);
+  }
+  function money(el){ var d=el.value.replace(/\D/g,''); el.value = d ? G.rp(+d) : ''; }
+  var toastT;
+  function toast(msg, err){
+    var t=document.getElementById('toast'); t.textContent=msg; t.className='on'+(err?' err':'');
+    clearTimeout(toastT); toastT=setTimeout(function(){ t.className=''; }, err?4500:2500);
+  }
+  function noInv(i){ var inv=state.invoices[i]; return inv.noManual || G.nomorInvoice(state.tanggal, i+1); }
+  function dataFor(i){
+    var inv=state.invoices[i];
+    return { noInvoice:noInv(i), tanggal:state.tanggal, kepada:state.kepada, alamat1:state.alamat1, alamat2:state.alamat2,
+      keterangan:state.keterangan, ppn:state.ppn, noPO:inv.noPO, tglPO:inv.tglPO, jatuhTempo:inv.jatuhTempo,
+      items:inv.items, potongan:inv.potongan };
+  }
+
+  /* ---------- render ---------- */
+  var app = document.getElementById('app');
+  var refs = [];   // per invoice: fungsi refresh
+
+  function render(){
+    app.innerHTML=''; refs=[];
+    app.appendChild(umum());
+    state.invoices.forEach(function(_, i){ app.appendChild(invoiceCard(i)); });
+    app.appendChild(h('div',{class:'actions'},
+      h('button',{class:'grow',onclick:function(){ state.invoices.push(newInvoice()); persist(); render(); window.scrollTo(0,document.body.scrollHeight); }},'+ Tambah invoice (tempat berikutnya)'),
+      h('button',{class:'ghost danger',onclick:function(){ if(confirm('Kosongkan semua invoice? Data umum tetap disimpan.')){ state.invoices=[newInvoice()]; persist(); render(); } }},'Mulai baru')
+    ));
+    document.getElementById('btnAll').textContent = state.invoices.length>1 ? 'Unduh semua ('+state.invoices.length+' invoice, .zip)' : 'Unduh invoice (.docx)';
+    refreshAll();
+    var dl=document.getElementById('dl-items'); if(dl) dl.remove();
+    var dlist=h('datalist',{id:'dl-items'}); Object.keys(history).forEach(function(n){ dlist.appendChild(h('option',{value:n})); });
+    document.body.appendChild(dlist);
+  }
+
+  function umum(){
+    function bind(key, input){ input.value=state[key]||''; input.addEventListener('input', function(){ state[key]=input.value; persist(); refreshAll(); }); return input; }
+    return h('section',{class:'card'},
+      h('h2',null,'Data umum'),
+      h('div',{class:'grid two'},
+        field('Tanggal invoice', bind('tanggal', h('input',{type:'date'})), 'Dipakai juga untuk nomor invoice (TTBBHH + nomor tempat)'),
+        field('Keterangan', bind('keterangan', h('input',{type:'text'}))),
+        field('Kepada', bind('kepada', h('input',{type:'text'}))),
+        field('PPN (%)', bind('ppn', h('input',{type:'text',inputmode:'decimal'})))
+      ),
+      h('div',{class:'grid',style:'margin-top:12px'},
+        field('Alamat baris 1', bind('alamat1', h('input',{type:'text'}))),
+        field('Alamat baris 2', bind('alamat2', h('input',{type:'text'})))
+      )
+    );
+  }
+
+  function invoiceCard(i){
+    var inv = state.invoices[i];
+    var noIn = h('input',{type:'text',inputmode:'numeric'}); noIn.value=inv.noManual||'';
+    noIn.addEventListener('input',function(){ inv.noManual=noIn.value.replace(/\D/g,''); noIn.value=inv.noManual; persist(); refreshAll(); });
+    var poIn = h('input',{type:'text',placeholder:'cth. 467/PPK.10/DIRI-BRIN/PO/9/2026'}); poIn.value=inv.noPO||'';
+    poIn.addEventListener('input',function(){ inv.noPO=poIn.value; persist(); });
+    var tpoIn = h('input',{type:'date'}); tpoIn.value=inv.tglPO||'';
+    var jtIn = h('input',{type:'date'}); jtIn.value=inv.jatuhTempo||'';
+    tpoIn.addEventListener('input',function(){
+      inv.tglPO=tpoIn.value;
+      if(!inv.jtManual){ inv.jatuhTempo=G.addMonths(inv.tglPO,1); jtIn.value=inv.jatuhTempo; }
+      persist();
+    });
+    jtIn.addEventListener('input',function(){ inv.jtManual=true; inv.jatuhTempo=jtIn.value; persist(); });
+
+    var itemsBox = h('div');
+    var addBtn = h('button',{class:'small',onclick:function(){ if(inv.items.length<5){ inv.items.push(newItem()); persist(); drawItems(); refreshAll(); } }},'+ Tambah barang');
+    function drawItems(){
+      itemsBox.innerHTML='';
+      inv.items.forEach(function(it, k){
+        var nama=h('input',{type:'text',placeholder:'cth. Service berkala lift Hyundai September',list:'dl-items',autocomplete:'off'}); nama.value=it.nama;
+        var sat=h('input',{type:'text'}); sat.value=it.satuan;
+        var qty=h('input',{type:'text',inputmode:'numeric'}); qty.value=it.qty;
+        var harga=h('input',{type:'text',inputmode:'numeric',placeholder:'0'}); harga.value=it.harga?G.rp(G.num(it.harga)):'';
+        nama.addEventListener('input',function(){ it.nama=nama.value; persist(); });
+        nama.addEventListener('change',function(){
+          var hs=history[nama.value.trim()];
+          if(hs && !G.num(it.harga)){ it.harga=String(hs.harga); harga.value=G.rp(hs.harga); if(hs.satuan){ it.satuan=hs.satuan; sat.value=hs.satuan; } persist(); refreshAll(); }
+        });
+        sat.addEventListener('input',function(){ it.satuan=sat.value; persist(); });
+        qty.addEventListener('input',function(){ money(qty); it.qty=qty.value; persist(); refreshAll(); });
+        harga.addEventListener('input',function(){ money(harga); it.harga=harga.value; persist(); refreshAll(); });
+        var tot=h('b',{text:'Rp 0'}); tot.setAttribute('data-tot', k);
+        itemsBox.appendChild(h('div',{class:'item'},
+          h('label',null,'Barang / pekerjaan '+(k+1)), nama,
+          h('div',{class:'row'},
+            h('div',null,h('label',null,'Satuan'),sat),
+            h('div',null,h('label',null,'Jumlah'),qty),
+            h('div',null,h('label',null,'Harga (Rp)'),harga)),
+          h('div',{class:'tot'}, h('span',null,'Total baris'), tot),
+          inv.items.length>1 ? h('div',{class:'actions',style:'margin-top:6px'},h('button',{class:'small ghost danger',onclick:function(){ inv.items.splice(k,1); persist(); drawItems(); refreshAll(); }},'Hapus baris')) : null
+        ));
+      });
+      addBtn.disabled = inv.items.length>=5;
+    }
+    drawItems();
+
+    var pot = h('input',{type:'text',inputmode:'numeric',placeholder:'0'}); pot.value=inv.potongan?G.rp(G.num(inv.potongan)):'';
+    pot.addEventListener('input',function(){ money(pot); inv.potongan=pot.value; persist(); refreshAll(); });
+
+    var sSub=h('b'), sPpn=h('b'), sTot=h('b'), sTb=h('span',{class:'tb'});
+    var sum = h('div',{class:'sum'},
+      h('div',null,h('span',null,'Sub total'),sSub),
+      h('div',null,h('span',null,'PPN'),sPpn),
+      h('div',{class:'big'},h('span',null,'TOTAL'),sTot), sTb);
+    var badge = h('span',{class:'badge'});
+    var hint = h('div',{class:'hint'});
+
+    refs.push(function(){
+      var c=G.hitung(dataFor(i));
+      badge.textContent='No. '+noInv(i);
+      noIn.placeholder=G.nomorInvoice(state.tanggal,i+1)+' (otomatis)';
+      sSub.textContent='Rp '+G.rp(c.sub); sPpn.textContent='Rp '+G.rp(c.ppn); sTot.textContent='Rp '+G.rp(c.total);
+      sTb.textContent = c.total ? 'Terbilang: '+G.terbilang(c.total) : '';
+      Array.prototype.forEach.call(itemsBox.querySelectorAll('[data-tot]'),function(el){
+        var it=inv.items[+el.getAttribute('data-tot')]; el.textContent='Rp '+G.rp(G.num(it.qty)*G.num(it.harga));
+      });
+    });
+
+    var card = h('section',{class:'card'},
+      h('h2',null,h('span',null,'Invoice tempat '+(i+1)), badge),
+      h('div',{class:'grid two'},
+        field('Nomor invoice', noIn, 'Kosongkan = otomatis dari tanggal invoice'),
+        field('Nomor PO', poIn),
+        field('Tanggal PO', tpoIn),
+        field('Jatuh tempo', jtIn, 'Otomatis 1 bulan setelah tanggal PO; bisa diubah')
+      ),
+      h('div',{style:'margin-top:14px'}, itemsBox, addBtn),
+      h('div',{class:'grid',style:'margin-top:12px'}, field('Potongan harga (Rp)', pot)),
+      sum, hint,
+      h('div',{class:'actions'},
+        h('button',{class:'primary grow',onclick:function(){ unduhSatu(i); }},'Unduh .docx'),
+        navigator.canShare ? h('button',{onclick:function(){ bagikan(i); }},'Bagikan') : null,
+        h('button',{onclick:function(){ var cp=JSON.parse(JSON.stringify(inv)); cp.noManual=''; cp.noPO=''; state.invoices.splice(i+1,0,cp); persist(); render(); }},'Duplikat'),
+        state.invoices.length>1 ? h('button',{class:'ghost danger',onclick:function(){ if(confirm('Hapus invoice tempat '+(i+1)+'?')){ state.invoices.splice(i,1); persist(); render(); } }},'Hapus') : null
+      )
+    );
+    return card;
+  }
+  function refreshAll(){ refs.forEach(function(f){ f(); }); }
+
+  /* ---------- unduh ---------- */
+  function rememberItems(i){
+    state.invoices[i].items.forEach(function(it){
+      var n=(it.nama||'').trim(), hg=G.num(it.harga);
+      if(n && hg) history[n]={harga:hg, satuan:it.satuan||'Pcs'};
+    });
+    lsSet(KEY_ITEMS, history);
+  }
+  function fileName(i){ return 'Invoice '+noInv(i)+'.docx'; }
+  function saveBlob(blob, name){
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+  async function bikin(i){
+    var d=dataFor(i);
+    if(!d.tanggal) throw new Error('Isi tanggal invoice.');
+    if(!d.noInvoice) throw new Error('Nomor invoice kosong.');
+    var blob = await G.buildInvoice(d);
+    rememberItems(i);
+    return blob;
+  }
+  async function unduhSatu(i){
+    try{ saveBlob(await bikin(i), fileName(i)); toast('Tersimpan: '+fileName(i)); }
+    catch(e){ toast(e.message||String(e), true); }
+  }
+  async function bagikan(i){
+    try{
+      var blob=await bikin(i), f=new File([blob], fileName(i), {type:G.MIME});
+      if(navigator.canShare && navigator.canShare({files:[f]})) await navigator.share({files:[f], title:fileName(i)});
+      else saveBlob(blob, fileName(i));
+    }catch(e){ if(e && e.name!=='AbortError') toast(e.message||String(e), true); }
+  }
+  document.getElementById('btnAll').addEventListener('click', async function(){
+    try{
+      if(state.invoices.length===1){ return unduhSatu(0); }
+      var zip=new JSZip();
+      for(var i=0;i<state.invoices.length;i++){
+        try{ zip.file(fileName(i), await bikin(i)); }
+        catch(e){ throw new Error('Invoice tempat '+(i+1)+': '+(e.message||e)); }
+      }
+      var blob=await zip.generateAsync({type:'blob'});
+      saveBlob(blob, 'Invoice '+state.tanggal+'.zip'); toast('Semua invoice diunduh (.zip)');
+    }catch(e){ toast(e.message||String(e), true); }
+  });
+
+  render();
+  window.__state = state; // untuk pengujian
+})();
+</script>
+</body>
+</html>
