@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6f43">
+<title>Surat TKDN · Usaha Mandiri Lift</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <a class="home" href="index.html">← Semua dokumen</a>
+  <h1>Surat TKDN</h1>
+  <p>Paket pekerjaan dan PO otomatis dari kode yang dipilih.</p>
+</header>
+<nav class="tabs" id="nav" aria-label="Jenis dokumen"></nav>
+
+<main class="wrap">
+  <section class="card"><h2>1. Pilih kode</h2><div class="kode" id="kode"></div></section>
+
+  <section class="card"><h2>2. Isian surat</h2><div id="f"></div></section>
+
+  <details class="card"><summary>Penandatangan &amp; kalimat pernyataan</summary>
+    <div class="g2">
+      <div><label for="s_nama">Nama</label><input id="s_nama"></div>
+      <div><label for="s_jabatan">Jabatan</label><input id="s_jabatan"></div>
+    </div>
+    <div class="g1"><div><label for="s_alamat">Alamat</label><textarea id="s_alamat" rows="2"></textarea></div></div>
+    <div class="g1"><div><label for="s_pekerjaan">Pekerjaan pada kalimat “Sehubungan dengan …” (kosong = ikut paket pekerjaan)</label><input id="s_pekerjaan"></div></div>
+    <p class="note">Biarkan kosong: kalimat otomatis memakai paket pekerjaan. Nama penandatangan juga dipakai di surat permohonan pembayaran.</p>
+  </details>
+
+  <section class="card"><h2>Lainnya</h2>
+    <div class="row">
+      <a class="btn" href="permohonan.html">← Surat permohonan</a>
+      <button class="btn" id="bShare" type="button" hidden>Bagikan…</button>
+      <button class="btn" id="bSave" type="button">Simpan sebagai bawaan kode ini</button>
+    </div>
+  </section>
+
+  <p class="foot">Bawaan yang Anda simpan hanya tersimpan di browser ini. Semua data diproses di perangkat Anda, tidak dikirim ke server.</p>
+</main>
+
+<div class="bar"><div class="in">
+  <button class="btn pri" id="bDl" type="button">Unduh surat TKDN (.docx)</button>
+</div></div>
+
+<script src="jszip.min.js"></script>
+<script src="templates.js"></script>
+<script src="docgen.js"></script>
+<script src="common.js"></script>
+<script>
+(function(){
+  'use strict';
+  var A = App, G = A.G, S = A.S, $ = A.$, mk = A.mk, lab = A.lab;
+  A.nav('tkdn');
+  function W(){ return S.work[S.kode]; }
+  A.kodeTiles($('kode'), drawAll);
+
+  function drawForm(){
+    var w = W(), box = $('f'); box.innerHTML = '';
+    var tgl = mk('input', null, {type:'date'}); tgl.value = w.tkdnTgl || S.tanggal;
+    var paket = mk('textarea', null, {rows:'3', placeholder:'cth. Pemeliharaan rutin lift … pada gedung …'}); paket.value = w.paket || w.uraian || '';
+    tgl.addEventListener('input', function(){ W().tkdnTgl = tgl.value; A.persist(); });
+    paket.addEventListener('input', function(){ W().paket = paket.value; A.persist(); });
+    var d = A.dataFor(S.kode), kv = mk('dl','kv');
+    [['Nomor PO', d.noPO || '— belum diisi di invoice'], ['Tanggal PO', d.tglPO ? G.tglID(d.tglPO) : '-']].forEach(function(p){
+      var a1 = mk('dt'), b1 = mk('dd'); a1.textContent = p[0]; b1.textContent = p[1]; kv.appendChild(a1); kv.appendChild(b1);
+    });
+    var lnk = mk('p','note'); lnk.innerHTML = 'Nomor & tanggal PO otomatis sama dengan invoice. <a href="invoice.html">Ubah di invoice →</a>';
+    var g1 = mk('div','g1'); g1.appendChild(lab('Paket pekerjaan', paket));
+    var g3 = mk('div','g1'); g3.appendChild(lab('Tanggal surat (Jakarta, …)', tgl));
+    var hint = mk('p','note'); hint.textContent = 'Paket pekerjaan dipakai bersama surat permohonan pembayaran; mengubahnya di sini mengubah di sana juga.';
+    [kv, lnk, g1, g3, hint].forEach(function(e){ box.appendChild(e); });
+  }
+  function drawAll(){ drawForm(); A.persist(); }
+
+  var map = { nama: 'spp', jabatan: 'tkdn', alamat: 'tkdn', pekerjaan: 'tkdn' };
+  Object.keys(map).forEach(function(k){
+    var el = $('s_' + k), obj = map[k] === 'spp' ? A.spp : A.tkdnSet, key = k === 'nama' ? 'penandatangan' : k;
+    el.value = obj[key];
+    el.addEventListener('input', function(){ obj[key] = el.value; if (map[k] === 'spp') A.persistSpp(); else A.persistTkdn(); });
+  });
+
+  function fName(){ return 'Surat TKDN ' + A.dataFor(S.kode).noInvoice + '.docx'; }
+  async function bikin(){ var d = A.dataTkdn(S.kode); if (!d.noPO) throw new Error('Isi Kode PO di halaman Invoice dulu.'); if (!String(d.paket || '').trim()) throw new Error('Isi paket pekerjaan dulu.'); var b = await G.buildTkdn(d); A.remember(S.kode); return b; }
+  $('bDl').addEventListener('click', A.guard(async function(){ var b = await bikin(); A.saveBlob(b, fName()); A.toast('Tersimpan: ' + fName()); }));
+  if (A.canShare()) { $('bShare').hidden = false; $('bShare').addEventListener('click', A.guard(async function(){
+    var fs = [new File([await bikin()], fName(), {type:G.MIME})];
+    if (navigator.canShare({files:fs})) await navigator.share({files:fs, title: fName()}); else A.saveBlob(fs[0], fs[0].name);
+  })); }
+  $('bSave').addEventListener('click', function(){ A.saveBawaan(S.kode); A.toast('Disimpan sebagai bawaan Kode ' + S.kode); });
+
+  drawAll();
+})();
+</script>
+</body>
+</html>

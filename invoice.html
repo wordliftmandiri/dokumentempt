@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6f43">
+<title>Invoice · Usaha Mandiri Lift</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <a class="home" href="index.html">← Semua dokumen</a>
+  <h1>Invoice</h1>
+  <p>Pilih kode, periksa isiannya, lalu unduh sebagai Word.</p>
+</header>
+<nav class="tabs" id="nav" aria-label="Jenis dokumen"></nav>
+
+<main class="wrap">
+  <section class="card"><h2>1. Kode invoice</h2><div class="kode" id="kode"></div></section>
+
+  <section class="card"><h2>2. Data invoice</h2><div id="data"></div></section>
+
+  <section class="card"><h2>3. Barang</h2>
+    <div class="hd"><span></span><span>Nama</span><span class="r">Jumlah</span><span class="r">Harga (Rp)</span><span class="r">Total (Rp)</span><span></span></div>
+    <div id="items"></div>
+    <div class="g2" style="margin-top:14px"><div><label for="pot">Potongan harga (Rp)</label><input id="pot" class="r" inputmode="numeric" placeholder="0"></div></div>
+    <p class="note">Baris yang namanya kosong dicetak sebagai baris kosong (0 / Pcs / 0 / -).</p>
+  </section>
+
+  <section class="card"><h2>4. Ringkasan</h2>
+    <div class="sum">
+      <div>Sub total</div><div id="sSub"></div>
+      <div id="sPpnL">PPN 11%</div><div id="sPpn"></div>
+      <div class="big">Total</div><div class="big" id="sTot"></div>
+    </div>
+    <p class="tb" id="sTb"></p>
+  </section>
+
+  <section class="card"><h2>Lainnya</h2>
+    <div class="row">
+      <a class="btn" href="kuitansi.html">Lanjut ke kuitansi →</a>
+      <button class="btn" id="bBoth" type="button">Unduh invoice + kuitansi (.zip)</button>
+      <button class="btn" id="bShare" type="button" hidden>Bagikan…</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="bSave" type="button">Simpan sebagai bawaan kode ini</button>
+      <button class="btn danger" id="bReset" type="button">Kembalikan bawaan awal</button>
+    </div>
+  </section>
+
+  <details class="card"><summary>Penerima &amp; pengaturan umum</summary>
+    <div class="g1">
+      <div><label for="u_kepada">Kepada</label><input id="u_kepada"></div>
+      <div><label for="u_alamat1">Alamat baris 1</label><input id="u_alamat1"></div>
+      <div><label for="u_alamat2">Alamat baris 2</label><input id="u_alamat2"></div>
+    </div>
+    <div class="g2"><div><label for="u_keterangan">Keterangan</label><input id="u_keterangan"></div><div><label for="u_ppn">PPN (%)</label><input id="u_ppn" inputmode="decimal"></div></div>
+    <p class="note">Berlaku juga untuk kuitansi.</p>
+  </details>
+
+  <p class="foot">Bawaan yang Anda simpan hanya tersimpan di browser ini. Semua data diproses di perangkat Anda, tidak dikirim ke server.</p>
+</main>
+
+<div class="bar"><div class="in">
+  <button class="btn pri" id="bDl" type="button">Unduh invoice (.docx)</button>
+</div></div>
+<datalist id="dl"></datalist>
+
+<script src="jszip.min.js"></script>
+<script src="templates.js"></script>
+<script src="docgen.js"></script>
+<script src="common.js"></script>
+<script>
+(function(){
+  'use strict';
+  var A = App, G = A.G, S = A.S, $ = A.$, mk = A.mk, lab = A.lab, money = A.money;
+  A.nav('invoice');
+  function W(){ return S.work[S.kode]; }
+
+  var tiles = A.kodeTiles($('kode'), drawAll);
+
+  /* ---------- data invoice ---------- */
+  var elNo;
+  function drawData(){
+    var w = W(), box = $('data'); box.innerHTML = '';
+    var elTgl = mk('input', null, {type:'date'}); elTgl.value = S.tanggal;
+    elNo = mk('input', null, {inputmode:'numeric'}); elNo.value = w.noManual || A.auto(S.kode);
+    var elPO = mk('input', null, {placeholder:'cth. 467/PPK.10/DIRI-BRIN/PO/9/2026'}); elPO.value = w.noPO || '';
+    var elTPO = mk('input', null, {type:'date'}); elTPO.value = w.tglPO || '';
+    var elJT = mk('input', null, {type:'date'}); elJT.value = w.jatuhTempo || '';
+    elTgl.addEventListener('input', function(){ S.tanggal = elTgl.value; if (!W().noManual) elNo.value = A.auto(S.kode); A.persist(); refresh(); });
+    elNo.addEventListener('input', function(){ var v = elNo.value.replace(/\D/g,''); elNo.value = v; W().noManual = (v === A.auto(S.kode) ? '' : v); A.persist(); });
+    elPO.addEventListener('input', function(){ W().noPO = elPO.value; A.persist(); });
+    elTPO.addEventListener('input', function(){
+      var x = W(); x.tglPO = elTPO.value;
+      if (!x.jtManual) { x.jatuhTempo = G.addMonths(elTPO.value, 1); elJT.value = x.jatuhTempo; }
+      A.persist();
+    });
+    elJT.addEventListener('input', function(){ var x = W(); x.jtManual = true; x.jatuhTempo = elJT.value; A.persist(); });
+    var g1 = mk('div','g2'); g1.appendChild(lab('Tanggal invoice', elTgl)); g1.appendChild(lab('Nomor invoice', elNo));
+    var g2 = mk('div','g1'); g2.appendChild(lab('Kode PO', elPO));
+    var g3 = mk('div','g2'); g3.appendChild(lab('Tanggal PO', elTPO)); g3.appendChild(lab('Jatuh tempo', elJT));
+    box.appendChild(g1); box.appendChild(g2); box.appendChild(g3);
+  }
+
+  /* ---------- barang ---------- */
+  var totEls = [];
+  function drawItems(){
+    var w = W(), box = $('items'); box.innerHTML = ''; totEls = [];
+    w.items.forEach(function(row, i){
+      var r = mk('div','it'), n = mk('span','n'); n.textContent = i + 1;
+      var nama = mk('input','nama',{placeholder:'Nama barang', list:'dl', autocomplete:'off', 'aria-label':'Nama barang '+(i+1)}); nama.value = row.nama;
+      var qty = mk('input','qty r',{inputmode:'numeric', placeholder:'Jumlah', 'aria-label':'Jumlah '+(i+1)}); qty.value = row.qty ? G.rp(G.num(row.qty)) : '';
+      var harga = mk('input','harga r',{inputmode:'numeric', placeholder:'Harga', 'aria-label':'Harga '+(i+1)}); harga.value = row.harga ? G.rp(G.num(row.harga)) : '';
+      var tot = mk('span','tot'); totEls.push(tot);
+      var x = mk('button','x',{type:'button','aria-label':'Kosongkan baris '+(i+1)}); x.textContent = '×';
+      nama.addEventListener('input', function(){ row.nama = nama.value; if (row.nama && !row.qty) { row.qty = '1'; qty.value = '1'; } refresh(); });
+      nama.addEventListener('change', function(){
+        var p = A.histPrice(nama.value.trim());
+        if (p && !G.num(row.harga)) { row.harga = String(p); harga.value = G.rp(p); refresh(); }
+      });
+      qty.addEventListener('input', function(){ row.qty = money(qty); refresh(); });
+      harga.addEventListener('input', function(){ row.harga = money(harga); refresh(); });
+      x.addEventListener('click', function(){ row.nama = ''; row.qty = ''; row.harga = ''; nama.value = ''; qty.value = ''; harga.value = ''; refresh(); });
+      [n, nama, qty, harga, tot, x].forEach(function(e){ r.appendChild(e); });
+      box.appendChild(r);
+    });
+    $('pot').value = w.potongan ? G.rp(G.num(w.potongan)) : '';
+  }
+  $('pot').addEventListener('input', function(){ W().potongan = money($('pot')); refresh(); });
+
+  function refresh(){
+    var d = A.dataFor(S.kode), c = G.hitung(d);
+    W().items.forEach(function(row, i){ var t = G.num(row.qty) * G.num(row.harga); if (totEls[i]) totEls[i].textContent = t ? G.rp(t) : '-'; });
+    $('sSub').textContent = 'Rp ' + G.rp(c.sub); $('sPpnL').textContent = 'PPN ' + String(c.pct).replace('.', ',') + '%';
+    $('sPpn').textContent = 'Rp ' + G.rp(c.ppn); $('sTot').textContent = 'Rp ' + G.rp(c.total);
+    $('sTb').textContent = c.rows.length ? 'Terbilang: ' + G.terbilang(c.total) : '';
+    tiles.redraw(); A.persist();
+  }
+  function drawAll(){ drawData(); drawItems(); refresh(); }
+
+  /* ---------- pengaturan umum ---------- */
+  ['kepada','alamat1','alamat2','keterangan','ppn'].forEach(function(k){
+    var el = $('u_' + k); el.value = A.umum[k];
+    el.addEventListener('input', function(){ A.umum[k] = el.value; A.persistUmum(); refresh(); });
+  });
+
+  /* ---------- datalist ---------- */
+  function datalist(){ var dl = $('dl'); dl.innerHTML = ''; A.names().forEach(function(n){ var o = mk('option'); o.value = n; dl.appendChild(o); }); }
+
+  /* ---------- tombol ---------- */
+  function fInv(){ return 'Invoice ' + A.dataFor(S.kode).noInvoice + '.docx'; }
+  function fKw(){ return 'Kuitansi ' + A.dataFor(S.kode).noInvoice + '.docx'; }
+  async function bikin(){ var b = await G.buildInvoice(A.cek(S.kode)); A.remember(S.kode); datalist(); return b; }
+  async function bikinKw(){ var b = await G.buildKuitansi(A.cek(S.kode)); A.remember(S.kode); return b; }
+
+  $('bDl').addEventListener('click', A.guard(async function(){ var b = await bikin(); A.saveBlob(b, fInv()); A.toast('Tersimpan: ' + fInv()); }));
+  $('bBoth').addEventListener('click', A.guard(async function(){
+    var zip = new JSZip(); zip.file(fInv(), await bikin()); zip.file(fKw(), await bikinKw());
+    A.saveBlob(await zip.generateAsync({type:'blob'}), 'Invoice dan Kuitansi ' + A.dataFor(S.kode).noInvoice + '.zip'); A.toast('Invoice + kuitansi tersimpan (.zip)');
+  }));
+  if (A.canShare()) { $('bShare').hidden = false; $('bShare').addEventListener('click', A.guard(async function(){
+    var fs = [new File([await bikin()], fInv(), {type:G.MIME})];
+    if (navigator.canShare({files:fs})) await navigator.share({files:fs, title: fInv()}); else { A.saveBlob(fs[0], fs[0].name); }
+  })); }
+  $('bSave').addEventListener('click', function(){ A.saveBawaan(S.kode); datalist(); A.toast('Disimpan sebagai bawaan Kode ' + S.kode); });
+  $('bReset').addEventListener('click', function(){
+    if (!confirm('Kembalikan Kode ' + S.kode + ' ke bawaan awal (data dari template asli)? Bawaan yang pernah Anda simpan untuk kode ini ikut dihapus.')) return;
+    A.resetKode(S.kode); drawAll(); A.toast('Kode ' + S.kode + ' dikembalikan ke bawaan awal');
+  });
+
+  datalist(); drawAll();
+})();
+</script>
+</body>
+</html>

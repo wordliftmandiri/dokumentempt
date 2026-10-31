@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6f43">
+<title>Kuitansi · Usaha Mandiri Lift</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <a class="home" href="index.html">← Semua dokumen</a>
+  <h1>Kuitansi</h1>
+  <p>Mengikuti invoice: nomor, PO, dan nominal diambil otomatis.</p>
+</header>
+<nav class="tabs" id="nav" aria-label="Jenis dokumen"></nav>
+
+<main class="wrap">
+  <section class="card"><h2>1. Pilih invoice (kode)</h2><div class="kode" id="kode"></div></section>
+
+  <section class="card"><h2>2. Dari invoice</h2>
+    <dl class="kv" id="kv"></dl>
+    <p class="tb" id="sTb"></p>
+    <p class="note"><a href="invoice.html">Ubah data invoice →</a></p>
+  </section>
+
+  <section class="card"><h2>3. Isian kuitansi</h2>
+    <div id="kw"></div>
+  </section>
+
+  <section class="card"><h2>Lainnya</h2>
+    <div class="row">
+      <a class="btn" href="invoice.html">← Kembali ke invoice</a>
+      <button class="btn" id="bShare" type="button" hidden>Bagikan…</button>
+      <button class="btn" id="bSave" type="button">Simpan sebagai bawaan kode ini</button>
+    </div>
+  </section>
+
+  <p class="foot">Bawaan yang Anda simpan hanya tersimpan di browser ini. Semua data diproses di perangkat Anda, tidak dikirim ke server.</p>
+</main>
+
+<div class="bar"><div class="in">
+  <button class="btn pri" id="bDl" type="button">Unduh kuitansi (.docx)</button>
+</div></div>
+
+<script src="jszip.min.js"></script>
+<script src="templates.js"></script>
+<script src="docgen.js"></script>
+<script src="common.js"></script>
+<script>
+(function(){
+  'use strict';
+  var A = App, G = A.G, S = A.S, $ = A.$, mk = A.mk, lab = A.lab;
+  A.nav('kuitansi');
+  function W(){ return S.work[S.kode]; }
+  var tiles = A.kodeTiles($('kode'), drawAll);
+
+  var elNo, elTgl;
+  function noKw(){ var d = A.dataFor(S.kode); return G.kuitansiNo(d.noInvoice, d.tanggal); }
+
+  function drawSummary(){
+    var d = A.dataFor(S.kode), c = G.hitung(d), kv = $('kv'); kv.innerHTML = '';
+    [['Nomor invoice', d.noInvoice], ['Kepada', d.kepada], ['Kode PO', d.noPO || '-'],
+     ['Total', c.rows.length ? 'Rp ' + G.rp(c.total) : '- (invoice kosong)']].forEach(function(p){
+      var a = mk('dt'), b = mk('dd'); a.textContent = p[0]; b.textContent = p[1]; kv.appendChild(a); kv.appendChild(b);
+    });
+    $('sTb').textContent = c.rows.length ? 'Terbilang: ' + G.terbilang(c.total) : '';
+  }
+
+  function drawForm(){
+    var w = W(), box = $('kw'); box.innerHTML = '';
+    elNo = mk('input', null, {readonly:'readonly'}); elNo.value = noKw();
+    elTgl = mk('input', null, {type:'date'}); elTgl.value = w.tglKw || S.tanggal;
+    var ur = mk('textarea', null, {placeholder:'cth. Pemeliharaan rutin lift ... pada gedung ...', rows:'3'}); ur.value = w.uraian || '';
+    elTgl.addEventListener('input', function(){ W().tglKw = elTgl.value; A.persist(); });
+    ur.addEventListener('input', function(){ W().uraian = ur.value; A.persist(); });
+    var g1 = mk('div','g2'); g1.appendChild(lab('Nomor kuitansi', elNo)); g1.appendChild(lab('Tanggal kuitansi (Depok, …)', elTgl));
+    var g2 = mk('div','g1'); g2.appendChild(lab('Untuk pembayaran', ur));
+    var hint = mk('p','note'); hint.textContent = 'Tercetak: “Untuk Pembayaran : [isian di atas] sesuai dengan Nomor PO - [Kode PO]”';
+    box.appendChild(g1); box.appendChild(g2); box.appendChild(hint);
+  }
+  function drawAll(){ drawSummary(); drawForm(); A.persist(); }
+
+  function fKw(){ return 'Kuitansi ' + A.dataFor(S.kode).noInvoice + '.docx'; }
+  async function bikin(){ var b = await G.buildKuitansi(A.cek(S.kode)); A.remember(S.kode); return b; }
+  $('bDl').addEventListener('click', A.guard(async function(){ var b = await bikin(); A.saveBlob(b, fKw()); A.toast('Tersimpan: ' + fKw()); }));
+  if (A.canShare()) { $('bShare').hidden = false; $('bShare').addEventListener('click', A.guard(async function(){
+    var fs = [new File([await bikin()], fKw(), {type:G.MIME})];
+    if (navigator.canShare({files:fs})) await navigator.share({files:fs, title: fKw()}); else A.saveBlob(fs[0], fs[0].name);
+  })); }
+  $('bSave').addEventListener('click', function(){ A.saveBawaan(S.kode); A.toast('Disimpan sebagai bawaan Kode ' + S.kode); });
+
+  drawAll();
+})();
+</script>
+</body>
+</html>

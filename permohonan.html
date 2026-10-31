@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6f43">
+<title>Surat Permohonan Pembayaran · Usaha Mandiri Lift</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <a class="home" href="index.html">← Semua dokumen</a>
+  <h1>Surat Permohonan Pembayaran</h1>
+  <p>Nominal dan terbilang otomatis dari invoice yang dipilih.</p>
+</header>
+<nav class="tabs" id="nav" aria-label="Jenis dokumen"></nav>
+
+<main class="wrap">
+  <section class="card"><h2>1. Pilih invoice (kode)</h2><div class="kode" id="kode"></div></section>
+
+  <section class="card"><h2>2. Dari invoice</h2>
+    <dl class="kv" id="kv"></dl>
+    <p class="tb" id="sTb"></p>
+    <p class="note"><a href="invoice.html">Ubah barang &amp; harga di invoice →</a></p>
+  </section>
+
+  <section class="card"><h2>3. Isian surat</h2><div id="f"></div></section>
+
+  <details class="card"><summary>Penerima, rekening &amp; tanda tangan</summary>
+    <div class="g1">
+      <div><label for="s_tujuan">Kepada YTH</label><textarea id="s_tujuan" rows="2"></textarea></div>
+      <div><label for="s_lampiran">Lampiran</label><input id="s_lampiran"></div>
+    </div>
+    <div class="g2">
+      <div><label for="s_bank">Nama bank</label><input id="s_bank"></div>
+      <div><label for="s_noRek">Nomor rekening</label><input id="s_noRek" inputmode="numeric"></div>
+    </div>
+    <div class="g1"><div><label for="s_atasNama">Atas nama</label><input id="s_atasNama"></div></div>
+    <div class="g2">
+      <div><label for="s_penandatangan">Penandatangan</label><input id="s_penandatangan"></div>
+      <div><label for="s_jabatan">Jabatan</label><input id="s_jabatan"></div>
+    </div>
+    <div class="g2"><div><label for="s_urut">Nomor urut surat (awal nomor)</label><input id="s_urut" inputmode="numeric"></div></div>
+    <p class="note">Bagian yang tidak diubah tetap persis seperti template asli.</p>
+  </details>
+
+  <section class="card"><h2>Lainnya</h2>
+    <div class="row">
+      <a class="btn" href="kuitansi.html">Ke kuitansi →</a>
+      <button class="btn" id="bShare" type="button" hidden>Bagikan…</button>
+      <button class="btn" id="bSave" type="button">Simpan sebagai bawaan kode ini</button>
+    </div>
+  </section>
+
+  <p class="foot">Bawaan yang Anda simpan hanya tersimpan di browser ini. Semua data diproses di perangkat Anda, tidak dikirim ke server.</p>
+</main>
+
+<div class="bar"><div class="in">
+  <button class="btn pri" id="bDl" type="button">Unduh surat (.docx)</button>
+</div></div>
+
+<script src="jszip.min.js"></script>
+<script src="templates.js"></script>
+<script src="docgen.js"></script>
+<script src="common.js"></script>
+<script>
+(function(){
+  'use strict';
+  var A = App, G = A.G, S = A.S, $ = A.$, mk = A.mk, lab = A.lab;
+  A.nav('permohonan');
+  function W(){ return S.work[S.kode]; }
+  var tiles = A.kodeTiles($('kode'), drawAll);
+  var elNo, elTgl;
+
+  function drawSummary(){
+    var d = A.dataFor(S.kode), c = G.hitung(d), kv = $('kv'); kv.innerHTML = '';
+    [['Nomor invoice', d.noInvoice], ['Kode PO', d.noPO || '-'], ['Total', c.rows.length ? 'Rp ' + G.rp(c.total) : '- (invoice kosong)']].forEach(function(p){
+      var a = mk('dt'), b = mk('dd'); a.textContent = p[0]; b.textContent = p[1]; kv.appendChild(a); kv.appendChild(b);
+    });
+    $('sTb').textContent = c.rows.length ? 'Terbilang: ' + G.terbilang(c.total) : '';
+  }
+
+  function drawForm(){
+    var w = W(), box = $('f'); box.innerHTML = '';
+    elTgl = mk('input', null, {type:'date'}); elTgl.value = w.sppTgl || S.tanggal;
+    elNo = mk('input'); elNo.value = A.dataFor(S.kode).noSurat;
+    var paket = mk('textarea', null, {rows:'3', placeholder:'cth. Pemeliharaan rutin lift … pada gedung …'}); paket.value = w.paket || w.uraian || '';
+    var ep = mk('input', null, {placeholder:'cth. EP-01KZNHS5B663XY6NEDT4SCX6R6', autocapitalize:'characters'}); ep.value = w.noEP || '';
+    var tep = mk('input', null, {type:'date'}); tep.value = w.tglEP || w.sppTgl || S.tanggal;
+    elTgl.addEventListener('input', function(){ W().sppTgl = elTgl.value; if (!W().sppNo) elNo.value = A.dataFor(S.kode).noSurat; if (!W().tglEP) tep.value = elTgl.value; A.persist(); });
+    elNo.addEventListener('input', function(){ var v = elNo.value, auto = G.nomorSurat(A.spp.urut, W().sppTgl || S.tanggal); W().sppNo = (v === auto ? '' : v); A.persist(); });
+    paket.addEventListener('input', function(){ W().paket = paket.value; A.persist(); });
+    ep.addEventListener('input', function(){ W().noEP = ep.value.trim(); A.persist(); });
+    tep.addEventListener('input', function(){ W().tglEP = tep.value; A.persist(); }); // dikosongkan = kembali mengikuti tanggal surat
+    var g1 = mk('div','g2'); g1.appendChild(lab('Tanggal surat (Jakarta, …)', elTgl)); g1.appendChild(lab('Nomor surat', elNo));
+    var g2 = mk('div','g1'); g2.appendChild(lab('Paket pekerjaan', paket));
+    var g3 = mk('div','g2'); g3.appendChild(lab('Nomor paket (EP-…)', ep)); g3.appendChild(lab('Tanggal paket (ikut tanggal surat)', tep));
+    var hint = mk('p','note'); hint.textContent = 'Nomor surat otomatis: urut/AMK/SPP/bulan (romawi)/tahun, mengikuti tanggal surat. Boleh diketik langsung.';
+    [g1, g2, g3, hint].forEach(function(e){ box.appendChild(e); });
+  }
+  function drawAll(){ drawSummary(); drawForm(); A.persist(); }
+
+  ['tujuan','lampiran','bank','noRek','atasNama','penandatangan','jabatan','urut'].forEach(function(k){
+    var el = $('s_' + k); el.value = A.spp[k];
+    el.addEventListener('input', function(){ A.spp[k] = el.value; A.persistSpp(); if (k === 'urut' && !W().sppNo) elNo.value = A.dataFor(S.kode).noSurat; });
+  });
+
+  function fName(){ return 'Surat Permohonan Pembayaran ' + A.dataFor(S.kode).noInvoice + '.docx'; }
+  async function bikin(){ var b = await G.buildPermohonan(A.cek(S.kode)); A.remember(S.kode); return b; }
+  $('bDl').addEventListener('click', A.guard(async function(){ var b = await bikin(); A.saveBlob(b, fName()); A.toast('Tersimpan: ' + fName()); }));
+  if (A.canShare()) { $('bShare').hidden = false; $('bShare').addEventListener('click', A.guard(async function(){
+    var fs = [new File([await bikin()], fName(), {type:G.MIME})];
+    if (navigator.canShare({files:fs})) await navigator.share({files:fs, title: fName()}); else A.saveBlob(fs[0], fs[0].name);
+  })); }
+  $('bSave').addEventListener('click', function(){ A.saveBawaan(S.kode); A.toast('Disimpan sebagai bawaan Kode ' + S.kode); });
+
+  drawAll();
+})();
+</script>
+</body>
+</html>
